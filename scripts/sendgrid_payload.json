@@ -1,0 +1,19 @@
+{
+  "personalizations": [
+    {
+      "to": [
+        { "email": "subscriber@example.com" }
+      ],
+      "subject": "【2112】週刊 Road to 2112"
+    }
+  ],
+  "from": {
+    "email": "info@sassamahha.me"
+  },
+  "content": [
+    {
+      "type": "text/html",
+      "value": "{{{html_body}}}"
+    }
+  ]
+}
