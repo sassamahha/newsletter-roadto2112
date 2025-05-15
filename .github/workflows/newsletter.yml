@@ -47,17 +47,3 @@ jobs:
             --data @scripts/sendgrid_payload.json
         env:
           SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
-
-      - name: Convert English MD to HTML
-        run: |
-          pandoc newsletters/latest.en.md -o email.en.html
-
-      - name: Send English email with SendGrid
-        run: |
-          curl -s --request POST \
-            --url https://api.sendgrid.com/v3/mail/send \
-            --header "Authorization: Bearer $SENDGRID_API_KEY" \
-            --header 'Content-Type: application/json' \
-            --data @scripts/sendgrid_payload_en.json
-        env:
-          SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
