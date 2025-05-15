@@ -1,17 +1,20 @@
-import datetime, openai, os, pathlib, textwrap
+import datetime, os, pathlib, textwrap
+from openai import OpenAI
+
+# OpenAIクライアント初期化（v1.0以降対応）
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 DATE = datetime.date.today().isoformat()
-openai.api_key = os.getenv("OPENAI_API_KEY")
 
 def ask(prompt):
     """ChatGPTにプロンプトを投げてレスポンスを取得"""
-    response = openai.ChatCompletion.create(
+    response = client.chat.completions.create(
         model="gpt-4o",
         messages=[{"role": "system", "content": prompt}],
         max_tokens=1800,
         temperature=1.0
     )
-    return response["choices"][0]["message"]["content"]
+    return response.choices[0].message.content
 
 def main():
     # 各ニュースを生成（日本語）
