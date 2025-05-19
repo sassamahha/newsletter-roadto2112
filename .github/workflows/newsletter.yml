@@ -9,6 +9,7 @@ on:
 jobs:
   build-send:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
 
@@ -47,9 +48,7 @@ jobs:
             "personalizations": [
               {
                 "to": [
-                  {
-                    "email": "jun.sasaki.eidendo@gmail.com"
-                  }
+                  { "email": "jun.sasaki.eidendo@gmail.com" }
                 ],
                 "subject": "【2112】週刊 Road to 2112"
               }
