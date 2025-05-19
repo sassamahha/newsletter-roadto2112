@@ -51,23 +51,16 @@ RSS_MAP = {
     },
 }
 
-# Road to 2112 紹介文
-# 旧：Markdown読み込み＋翻訳
-# intro_ja_path = pathlib.Path("blocks/road_to_2112.md")
-# intro_ja = intro_ja_path.read_text().strip() if intro_ja_path.exists() else "（紹介文が見つかりませんでした）"
-# intro = {lg: translate(intro_ja, lg).replace("\n", "<br>") for lg in LANGS}
-
-# 新：言語別にHTMLを直接読み込む
+# 言語別紹介文（HTML）
 intro = {}
 for lg in LANGS:
     path = pathlib.Path(f"blocks/road_to_2112_{lg}.html")
     intro[lg] = path.read_text().strip() if path.exists() else "(No introduction found)"
 
-
 # HTML組立
 parts = [
     "<!DOCTYPE html><html><head><meta charset='utf-8'></head><body>",
-    f"<h1>週刊 Road to 2112 🌐</h1>",
+    "<h1>週刊 Road to 2112 🌐</h1>",
     "<hr>",
     "<p>▼各言語へジャンプ</p>",
     '<p><a href="#ja">🇯🇵 JP</a> ｜ <a href="#en">🇺🇸 EN</a> ｜ <a href="#es">🇪🇸 ES</a></p>',
@@ -78,4 +71,16 @@ for lg, flag in (("ja", "🇯🇵"), ("en", "🇺🇸"), ("es", "🇪🇸")):
     parts.append(f'<a id="{lg}"></a>')
     parts.append(f"<h2>{flag} {LANGS[lg]}</h2>")
     parts.append("<h3>今週のアイスブレイク</h3>")
-    parts.append(f"<
+    parts.append(f"<p>{note[lg]}</p>")
+    parts.append("<h3>最新記事 (RSS)</h3>")
+    for label, url in RSS_MAP[lg].items():
+        block = rss_block(url)
+        parts.append(f"<b>{label}</b><br>{block}<br>")
+    parts.append("<h3>📘 Road to 2112</h3>")
+    parts.append(intro[lg])  # すでにHTML
+
+parts.append("</body></html>")
+
+html = "\n".join(parts)
+pathlib.Path("email.html").write_text(html, encoding="utf-8")
+print("✅ HTML email generated: email.html")
