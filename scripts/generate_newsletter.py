@@ -59,11 +59,29 @@ for lg in LANGS:
 
 # HTML組立
 parts = [
-    "<!DOCTYPE html><html><head><meta charset='utf-8'></head><body>",
+    "<!DOCTYPE html>",
+    "<html><head><meta charset='utf-8'>",
+    "<style>",
+    """
+    .rss-card {
+        background: #fff;
+        padding: 12px;
+        margin: 10px 0;
+        border-radius: 8px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    .rss-card a {
+        text-decoration: none;
+        font-weight: bold;
+        color: #0070f3;
+    }
+    """,
+    "</style>",
+    "</head><body>",
     "<h1>週刊 Road to 2112 🌐</h1>",
     "<hr>",
     "<p>▼各言語へジャンプ</p>",
-    '<p><a href="#ja">🇯🇵 JP</a> ｜ <a href="#en">🇺🇸 EN</a> ｜ <a href="#es">🇪🇸 ES</a></p>',
+    '<p><a href="#lang-ja">🇯🇵 Japanese</a> ｜ <a href="#lang-en">🇺🇸 English</a> ｜ <a href="#lang-es">🇪🇸 Spanish</a></p>',
     "<hr>"
 ]
 
