@@ -20,56 +20,36 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y pandoc
           pip install -r requirements.txt
 
-      - name: Generate newsletter content
+      - name: Generate newsletter content (HTML only)
         run: python scripts/generate_newsletter.py
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 
-      - name: Commit newsletter .md
-        run: |
-          git config user.name "github-actions"
-          git config user.email "action@github"
-          git add newsletters/*.md
-          git commit -m "auto: newsletter $(date '+%Y-%m-%d')" || echo "No changes"
-          git push
-
-      - name: Convert to HTML
-        run: pandoc newsletters/latest.md -o email.html
-
       - name: Send with SendGrid
         run: |
-          content=$(cat email.html | jq -Rs .)
-
-          cat <<EOF > payload.json
+          html=$(cat email.html)
+          jq -n --arg html "$html" '
           {
-            "personalizations": [
-              {
-                "to": [
-                  { "email": "jun.sasaki.eidendo@gmail.com" }
-                ],
-                "subject": "【2112】週刊 Road to 2112"
-              }
-            ],
-            "from": {
-              "email": "info@sassamahha.me",
-              "name": "Jun Sasaki"
+            personalizations: [{
+              to: [{email: "jun.sasaki.eidendo@gmail.com"}],
+              subject: "【2112】週刊 Road to 2112"
+            }],
+            from: {
+              email: "info@sassamahha.me",
+              name: "Jun Sasaki"
             },
-            "content": [
-              {
-                "type": "text/html",
-                "value": $content
-              }
-            ]
-          }
-          EOF
+            content: [{
+              type: "text/html",
+              value: $html
+            }]
+          }' > payload_ready.json
 
           curl -s --request POST \
             --url https://api.sendgrid.com/v3/mail/send \
             --header "Authorization: Bearer $SENDGRID_API_KEY" \
             --header "Content-Type: application/json" \
-            --data @payload.json
+            --data @payload_ready.json
         env:
           SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
