@@ -1,21 +1,38 @@
-html=$(< email.html)
+- name: Send with SendGrid
+  run: |
+    # Escapeなしで直接HTML埋め込む
+    html=$(< email.html)
 
-jq -n --arg html "$html" '
+    cat <<EOF > payload.json
 {
-  personalizations: [
+  "personalizations": [
     {
-      to: [ { email: "jun.sasaki.eidendo@gmail.com" } ],
-      subject: "【2112】週刊 Road to 2112"
+      "to": [
+        { "email": "jun.sasaki.eidendo@gmail.com" }
+      ],
+      "subject": "【2112】週刊 Road to 2112"
     }
   ],
-  from: {
-    email: "info@sassamahha.me",
-    name: "Jun Sasaki"
+  "from": {
+    "email": "info@sassamahha.me",
+    "name": "Jun Sasaki"
   },
-  content: [
+  "content": [
     {
-      type: "text/html",
-      value: $html
+      "type": "text/html",
+      "value": ""
     }
   ]
-}' > payload_ready.json
+}
+EOF
+
+    # jqでHTMLを直接埋め込む（ここでエスケープしても構造壊さないように）
+    jq --argfile html email.html '.content[0].value = $html' payload.json > payload_ready.json
+
+    curl -s --request POST \
+      --url https://api.sendgrid.com/v3/mail/send \
+      --header "Authorization: Bearer $SENDGRID_API_KEY" \
+      --header "Content-Type: application/json" \
+      --data @payload_ready.json
+  env:
+    SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
