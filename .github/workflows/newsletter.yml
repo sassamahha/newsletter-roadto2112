@@ -2,9 +2,9 @@ name: Weekly Newsletter
 
 on:
   schedule:
-    # 毎週火曜 8:30 JST（＝前日 月曜 23:30 UTC）
+    # 毎週火曜 08:30 JST（= 月曜23:30 UTC）
     - cron: '30 23 * * 1'
-  workflow_dispatch: {}  # 手動実行も可能
+  workflow_dispatch: {}
 
 jobs:
   build-send:
@@ -17,7 +17,7 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: | 
+        run: |
           sudo apt-get update
           sudo apt-get install -y pandoc
           pip install -r requirements.txt
@@ -36,15 +36,41 @@ jobs:
           git push
 
       - name: Convert to HTML
-        run: |
-          pandoc newsletters/latest.md -o email.html
+        run: pandoc newsletters/latest.md -o email.html
 
       - name: Send with SendGrid
         run: |
+          content=$(cat email.html | jq -Rs .)
+
+          cat <<EOF > payload.json
+          {
+            "personalizations": [
+              {
+                "to": [
+                  {
+                    "email": "jun.sasaki.eidendo@gmail.com"
+                  }
+                ],
+                "subject": "【2112】週刊 Road to 2112"
+              }
+            ],
+            "from": {
+              "email": "info@sassamahha.me",
+              "name": "Jun Sasaki"
+            },
+            "content": [
+              {
+                "type": "text/html",
+                "value": $content
+              }
+            ]
+          }
+          EOF
+
           curl -s --request POST \
             --url https://api.sendgrid.com/v3/mail/send \
             --header "Authorization: Bearer $SENDGRID_API_KEY" \
-            --header 'Content-Type: application/json' \
-            --data @scripts/sendgrid_payload.json
+            --header "Content-Type: application/json" \
+            --data @payload.json
         env:
           SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
