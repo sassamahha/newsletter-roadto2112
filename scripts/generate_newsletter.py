@@ -1,4 +1,4 @@
-import datetime, pathlib, feedparser, textwrap, os
+import datetime, pathlib, feedparser, os
 from openai import OpenAI
 
 DATE = datetime.date.today().isoformat()
@@ -7,9 +7,7 @@ LANGS = {"ja": "Japanese", "en": "English", "es": "Spanish"}
 # OpenAIクライアント初期化
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-# ■ 1. 今週の余談
-note_ja = pathlib.Path("blocks/editor_note.md").read_text().strip()
-
+# ■ 翻訳関数
 def translate(text, lang):
     if lang == "ja":
         return text
@@ -23,9 +21,11 @@ def translate(text, lang):
     )
     return rsp.choices[0].message.content.strip()
 
+# ■ 1. 今週の余談
+note_ja = pathlib.Path("blocks/editor_note.md").read_text().strip()
 note = {lg: translate(note_ja, lg) for lg in LANGS}
 
-# ■ 2. RSS 取得ユーティリティ
+# ■ 2. RSS取得ユーティリティ
 def rss_block(url, max_items=3):
     feed = feedparser.parse(url)
     lines = [f"- [{e.title}]({e.link})" for e in feed.entries[:max_items]]
@@ -48,11 +48,12 @@ RSS_MAP = {
 }
 
 # ■ 3. Road to 2112 紹介文
-intro_ja = pathlib.Path("blocks/road_to_2112.md").read_text().strip()
+intro_ja_path = pathlib.Path("blocks/road_to_2112.md")
+intro_ja = intro_ja_path.read_text().strip() if intro_ja_path.exists() else "（紹介文が見つかりませんでした）"
 intro = {lg: translate(intro_ja, lg) for lg in LANGS}
 
-# ■ 4. Markdown 組立
-parts = [f"<!-- slug: {DATE}-weekly-roadto2112\npublish_date: {DATE}\ncategory: newsletter -->\n",
+# ■ 4. Markdown組立
+parts = [f"---\nslug: {DATE}-weekly-roadto2112\npublish_date: {DATE}\ncategory: newsletter\n---\n",
          "# 週刊 Road to 2112 🌐\n"]
 
 for lg, flag in (("ja", "🇯🇵"), ("en", "🇺🇸"), ("es", "🇪🇸")):
