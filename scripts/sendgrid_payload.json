@@ -1,20 +1,21 @@
+html=$(< email.html)
+
+jq -n --arg html "$html" '
 {
-  "personalizations": [
+  personalizations: [
     {
-      "to": [
-        { "email": "jun.sasaki.eidendo@gmail.com" }
-      ],
-      "subject": "【2112】週刊 Road to 2112"
+      to: [ { email: "jun.sasaki.eidendo@gmail.com" } ],
+      subject: "【2112】週刊 Road to 2112"
     }
   ],
-  "from": {
-    "email": "info@sassamahha.me"
-    "name": "Jun Sasaki"
+  from: {
+    email: "info@sassamahha.me",
+    name: "Jun Sasaki"
   },
-  "content": [
+  content: [
     {
-      "type": "text/html",
-      "value": "{{html_content}}"
+      type: "text/html",
+      value: $html
     }
   ]
-}
+}' > payload_ready.json
