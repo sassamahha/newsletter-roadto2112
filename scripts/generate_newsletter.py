@@ -1,41 +1,19 @@
-import datetime, pathlib, feedparser, os
-from openai import OpenAI
+#!/usr/bin/env python3
+"""
+editor_note.txt（ja）を 3 言語に翻訳し
+RSS を 3 件ずつ取得して HTML 合成、
+newsletters/latest.html を吐く。
+"""
+import datetime, feedparser, pathlib, html, openai, os
 
+# ───────────────────────────────
+# 設定
 DATE = datetime.date.today().isoformat()
-LANGS = {"ja": "Japanese", "en": "English", "es": "Spanish"}
+LANGS = [("ja", "🇯🇵 Japanese"),
+         ("en", "🇺🇸 English"),
+         ("es", "🇪🇸 Spanish")]
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-
-# 改行→<br>でHTML用に整形
-def load_note_html(path: str):
-    raw = pathlib.Path(path).read_text().strip()
-    return raw.replace("\n", "<br>")
-
-# 翻訳関数
-def translate(text, lang):
-    if lang == "ja":
-        return text
-    rsp = client.chat.completions.create(
-        model="gpt-4o",
-        messages=[
-            {"role": "system", "content": f"Translate into {LANGS[lang]}."},
-            {"role": "user", "content": text}
-        ],
-        max_tokens=800
-    )
-    return rsp.choices[0].message.content.strip()
-
-# 今週のアイスブレイク（翻訳あり）
-note_ja = load_note_html("blocks/editor_note.md")
-note = {lg: translate(note_ja, lg) for lg in LANGS}
-
-# RSSユーティリティ
-def rss_block(url, max_items=3):
-    feed = feedparser.parse(url)
-    lines = [f'<a href="{e.link}">{e.title}</a>' for e in feed.entries[:max_items]]
-    return "<br>".join(lines) if lines else "_No updates._"
-
-RSS_MAP = {
+RSS = {
     "ja": {
         "Studyriver":      "https://studyriver.jp/feed",
         "Studyriver Kids": "https://studyriver.jp/kids/feed",
@@ -51,54 +29,74 @@ RSS_MAP = {
     },
 }
 
-# 言語別紹介文（HTML）
-intro = {}
-for lg in LANGS:
-    path = pathlib.Path(f"blocks/road_to_2112_{lg}.html")
-    intro[lg] = path.read_text().strip() if path.exists() else "(No introduction found)"
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
-# HTML組立
-parts = [
-    "<!DOCTYPE html>",
-    "<html><head><meta charset='utf-8'>",
-    "<style>",
-    """
-    .rss-card {
-        background: #fff;
-        padding: 12px;
-        margin: 10px 0;
-        border-radius: 8px;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-    }
-    .rss-card a {
-        text-decoration: none;
-        font-weight: bold;
-        color: #0070f3;
-    }
-    """,
-    "</style>",
-    "</head><body>",
-    "<h1>週刊 Road to 2112 🌐</h1>",
-    "<hr>",
-    "<p>▼各言語へジャンプ</p>",
-    '<p><a href="#lang-ja">🇯🇵 Japanese</a> ｜ <a href="#lang-en">🇺🇸 English</a> ｜ <a href="#lang-es">🇪🇸 Spanish</a></p>',
-    "<hr>"
+# ───────────────────────────────
+# util
+def t(text_ja, lang):
+    if lang == "ja":
+        return text_ja
+    rsp = openai.ChatCompletion.create(
+        model="gpt-4o",
+        messages=[
+            {"role":"system","content":f"Translate into {dict(LANGS)[lang]} preserving line breaks."},
+            {"role":"user","content":text_ja}
+        ],
+        max_tokens=800
+    )
+    return rsp.choices[0].message.content.strip()
+
+def rss_html(url, limit=3):
+    f = feedparser.parse(url)
+    items = f.entries[:limit]
+    return "\n".join(
+        f'<li><a href="{html.escape(e.link)}">{html.escape(e.title)}</a></li>'
+        for e in items
+    ) or "<li><em>No updates.</em></li>"
+
+# ───────────────────────────────
+# 1. エディターノート
+note_ja = pathlib.Path("blocks/editor_note.txt").read_text().strip()
+notes = {lg: t(note_ja, lg) for lg, _ in LANGS}
+
+# 2. Road to 2112 固定 HTML
+road_html = {
+    lg: pathlib.Path(f"blocks/road_to_2112_{lg}.html").read_text()
+    for lg, _ in LANGS
+}
+
+# 3. assemble
+parts = [f"""<!DOCTYPE html>
+<html lang="ja"><meta charset="utf-8">
+<title>週刊 Road to 2112</title>
+<body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;line-height:1.6;max-width:680px;margin:auto">
+<h1>週刊 Road to 2112 🌐</h1>
+<p><small>{DATE}</small></p>
+<nav>
+<strong>▼各言語へジャンプ</strong><br>
+""" + " | ".join(
+        f'<a href="#{lg}">{flag.split()[0]} {lang.split()[1]}</a>'
+        for lg, flag in LANGS for _, lang in [flag.split(" ",1)]
+    ) + "</nav><hr>"
 ]
 
-for lg, flag in (("ja", "🇯🇵"), ("en", "🇺🇸"), ("es", "🇪🇸")):
-    parts.append(f'<a id="{lg}"></a>')
-    parts.append(f"<h2>{flag} {LANGS[lg]}</h2>")
+for lg, label in LANGS:
+    flag, name = label.split(" ", 1)
+    parts.append(f'<h2 id="{lg}">{flag} {name}</h2>')
+    # note
     parts.append("<h3>今週のアイスブレイク</h3>")
-    parts.append(f"<p>{note[lg]}</p>")
+    parts.append("<p>" + notes[lg].replace("\n", "<br>") + "</p>")
+    # rss
     parts.append("<h3>最新記事 (RSS)</h3>")
-    for label, url in RSS_MAP[lg].items():
-        block = rss_block(url)
-        parts.append(f"<b>{label}</b><br>{block}<br>")
-    parts.append("<h3>📘 Road to 2112</h3>")
-    parts.append(intro[lg])  # すでにHTML
+    for site, url in RSS[lg].items():
+        parts.append(f"<h4>{site}</h4><ul>{rss_html(url)}</ul>")
+    # book intro
+    parts.append(road_html[lg])
+
+    parts.append("<hr>")
 
 parts.append("</body></html>")
 
-html = "\n".join(parts)
-pathlib.Path("email.html").write_text(html, encoding="utf-8")
-print("✅ HTML email generated: email.html")
+out = pathlib.Path("newsletters/latest.html")
+out.write_text("\n".join(parts), encoding="utf-8")
+print("✅ wrote", out)
