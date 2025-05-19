@@ -99,6 +99,6 @@ for lg, label in LANGS:
 parts.append("</body></html>")
 
 # 保存
-out = pathlib.Path("newsletters/latest.html")
+out = pathlib.Path("email.html")
 out.write_text("\n".join(parts), encoding="utf-8")
 print("✅ wrote", out)
