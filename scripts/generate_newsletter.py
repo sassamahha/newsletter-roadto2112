@@ -53,8 +53,15 @@ intro_ja = intro_ja_path.read_text().strip() if intro_ja_path.exists() else "（
 intro = {lg: translate(intro_ja, lg) for lg in LANGS}
 
 # ■ 4. Markdown組立
-parts = [f"---\nslug: {DATE}-weekly-roadto2112\npublish_date: {DATE}\ncategory: newsletter\n---\n",
-         "# 週刊 Road to 2112 🌐\n"]
+parts = [
+    "---",
+    f"slug: {DATE}-weekly-roadto2112",
+    f"publish_date: {DATE}",
+    f"category: newsletter",
+    "---",
+    "",  # ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ★重要：空行
+    "# 週刊 Road to 2112 🌐"
+]
 
 for lg, flag in (("ja", "🇯🇵"), ("en", "🇺🇸"), ("es", "🇪🇸")):
     parts.append(f"\n---\n## {flag} {LANGS[lg]}\n")
