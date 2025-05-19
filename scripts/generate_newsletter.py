@@ -52,9 +52,17 @@ RSS_MAP = {
 }
 
 # Road to 2112 紹介文
-intro_ja_path = pathlib.Path("blocks/road_to_2112.md")
-intro_ja = intro_ja_path.read_text().strip() if intro_ja_path.exists() else "（紹介文が見つかりませんでした）"
-intro = {lg: translate(intro_ja, lg).replace("\n", "<br>") for lg in LANGS}
+# 旧：Markdown読み込み＋翻訳
+# intro_ja_path = pathlib.Path("blocks/road_to_2112.md")
+# intro_ja = intro_ja_path.read_text().strip() if intro_ja_path.exists() else "（紹介文が見つかりませんでした）"
+# intro = {lg: translate(intro_ja, lg).replace("\n", "<br>") for lg in LANGS}
+
+# 新：言語別にHTMLを直接読み込む
+intro = {}
+for lg in LANGS:
+    path = pathlib.Path(f"blocks/road_to_2112_{lg}.html")
+    intro[lg] = path.read_text().strip() if path.exists() else "(No introduction found)"
+
 
 # HTML組立
 parts = [
