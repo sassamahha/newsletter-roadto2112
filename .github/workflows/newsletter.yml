@@ -2,10 +2,8 @@ name: Weekly Newsletter
 
 on:
   schedule:
-    # 月曜・木曜 8:00 JST（＝前日 23:00 UTC）
-    - cron: '0 23 * * 0,3'
-    # 月曜・木曜 9:00 JST（＝当日 0:00 UTC）
-    - cron: '0 0 * * 1,4'
+    # 毎週火曜 8:30 JST（＝前日 月曜 23:30 UTC）
+    - cron: '30 23 * * 1'
   workflow_dispatch: {}  # 手動実行も可能
 
 jobs:
