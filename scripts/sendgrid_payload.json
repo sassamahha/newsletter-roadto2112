@@ -1,9 +1,10 @@
 - name: Send with SendGrid
   run: |
-    # Escapeなしで直接HTML埋め込む
+    # HTML内容を読み込み＆安全な文字列に変換（ダブルクオートなども対応）
     html=$(< email.html)
+    escaped_html=$(printf '%s\n' "$html" | jq -Rs .)
 
-    cat <<EOF > payload.json
+    cat <<EOF > payload_ready.json
 {
   "personalizations": [
     {
@@ -20,14 +21,16 @@
   "content": [
     {
       "type": "text/html",
-      "value": ""
+      "value": $escaped_html
     }
   ]
 }
 EOF
 
-    # jqでHTMLを直接埋め込む（ここでエスケープしても構造壊さないように）
-    jq --argfile html email.html '.content[0].value = $html' payload.json > payload_ready.json
+    # Debug log（任意）
+    echo "------ SENDGRID PAYLOAD ------"
+    cat payload_ready.json
+    echo "------------------------------"
 
     curl -s --request POST \
       --url https://api.sendgrid.com/v3/mail/send \
