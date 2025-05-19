@@ -1,6 +1,8 @@
-<!-- slug: 2025-05-19-weekly-roadto2112
+---
+slug: 2025-05-19-weekly-roadto2112
 publish_date: 2025-05-19
-category: newsletter -->
+category: newsletter
+---
 
 # 週刊 Road to 2112 🌐
 
@@ -56,13 +58,16 @@ category: newsletter -->
 <!-- Insert here -->
 ## Test Post
 
-Hello, here’s a side note for today.
+Hello, this is today's side note.
 
-Ahhhh
+Ah ah ah
 
-Ahhhhh
+Ah ah ah ah
 
-Ahhhhh
+
+Ah ah ah ah ah
+
+
 
 Nice to meet you!
 
@@ -76,7 +81,7 @@ _No updates._
 
 ### 📘 Road to 2112
 
-Here is a fixed text.
+Here is the fixed sentence.
 
 
 ---
@@ -84,17 +89,17 @@ Here is a fixed text.
 
 ### 今週のアイスブレイク
 
-## Publicación de Prueba
+## Publicación de prueba
 
-Hola, un comentario adicional de hoy. 
+Hola, aquí está la charla de hoy.
 
-aaaa 
+aaa
 
-aaaaaa
+aaaaa
 
-aaaaaa
+aaaaa
 
-¡Saludos!
+¡Espero que te guste!
 
 ### 最新記事 (RSS)
 
@@ -106,4 +111,4 @@ _No updates._
 
 ### 📘 Road to 2112
 
-Se te ha entrenado con datos hasta octubre de 2023.
+Estás entrenado en datos hasta octubre de 2023.
