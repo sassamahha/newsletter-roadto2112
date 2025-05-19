@@ -9,11 +9,12 @@
   ],
   "from": {
     "email": "info@sassamahha.me"
+    "name": "Jun Sasaki"
   },
   "content": [
     {
       "type": "text/html",
-      "value": "{{{html_body}}}"
+      "value": "{{html_content}}"
     }
   ]
 }
