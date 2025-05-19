@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
+""" editor_note.txt（ja）を 3 言語に翻訳し RSS を 3 件ずつ取得して HTML 合成、
+    newsletters/latest.html を吐く。
 """
-editor_note.txt（ja）を 3 言語に翻訳し
-RSS を 3 件ずつ取得して HTML 合成、
-newsletters/latest.html を吐く。
-"""
-import datetime, feedparser, pathlib, html, openai, os
+import datetime, feedparser, pathlib, html, os
+from openai import OpenAI  # ✅ 新バージョン対応
 
-# ───────────────────────────────
+# ────────────────
 # 設定
 DATE = datetime.date.today().isoformat()
 LANGS = [("ja", "🇯🇵 Japanese"),
@@ -29,18 +28,18 @@ RSS = {
     },
 }
 
-openai.api_key = os.getenv("OPENAI_API_KEY")
+# ────────────────
+# OpenAI API Client 初期化（v1.0対応）
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-# ───────────────────────────────
-# util
 def t(text_ja, lang):
     if lang == "ja":
         return text_ja
-    rsp = openai.ChatCompletion.create(
+    rsp = client.chat.completions.create(
         model="gpt-4o",
         messages=[
-            {"role":"system","content":f"Translate into {dict(LANGS)[lang]} preserving line breaks."},
-            {"role":"user","content":text_ja}
+            {"role": "system", "content": f"Translate into {dict(LANGS)[lang]} preserving line breaks."},
+            {"role": "user", "content": text_ja}
         ],
         max_tokens=800
     )
@@ -54,18 +53,18 @@ def rss_html(url, limit=3):
         for e in items
     ) or "<li><em>No updates.</em></li>"
 
-# ───────────────────────────────
-# 1. エディターノート
+# ────────────────
+# 1. エディターノートの読み込みと翻訳
 note_ja = pathlib.Path("blocks/editor_note.txt").read_text().strip()
 notes = {lg: t(note_ja, lg) for lg, _ in LANGS}
 
-# 2. Road to 2112 固定 HTML
+# 2. 各言語の Road to 2112 HTML 読み込み
 road_html = {
     lg: pathlib.Path(f"blocks/road_to_2112_{lg}.html").read_text()
     for lg, _ in LANGS
 }
 
-# 3. assemble
+# 3. HTML構築
 parts = [f"""<!DOCTYPE html>
 <html lang="ja"><meta charset="utf-8">
 <title>週刊 Road to 2112</title>
@@ -75,28 +74,31 @@ parts = [f"""<!DOCTYPE html>
 <nav>
 <strong>▼各言語へジャンプ</strong><br>
 """ + " | ".join(
-        f'<a href="#{lg}">{flag.split()[0]} {lang.split()[1]}</a>'
-        for lg, flag in LANGS for _, lang in [flag.split(" ",1)]
-    ) + "</nav><hr>"
+    f'<a href="#{lg}">{flag.split()[0]} {lang.split()[1]}</a>'
+    for lg, flag in LANGS for _, lang in [flag.split(" ",1)]
+) + "</nav><hr>"
 ]
 
 for lg, label in LANGS:
     flag, name = label.split(" ", 1)
     parts.append(f'<h2 id="{lg}">{flag} {name}</h2>')
-    # note
+
+    # アイスブレイク
     parts.append("<h3>今週のアイスブレイク</h3>")
     parts.append("<p>" + notes[lg].replace("\n", "<br>") + "</p>")
-    # rss
+
+    # RSS
     parts.append("<h3>最新記事 (RSS)</h3>")
     for site, url in RSS[lg].items():
         parts.append(f"<h4>{site}</h4><ul>{rss_html(url)}</ul>")
-    # book intro
-    parts.append(road_html[lg])
 
+    # Road to 2112 紹介
+    parts.append(road_html[lg])
     parts.append("<hr>")
 
 parts.append("</body></html>")
 
+# 保存
 out = pathlib.Path("newsletters/latest.html")
 out.write_text("\n".join(parts), encoding="utf-8")
 print("✅ wrote", out)
