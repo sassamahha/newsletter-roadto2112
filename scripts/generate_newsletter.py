@@ -74,8 +74,8 @@ parts = [f"""<!DOCTYPE html>
 <nav>
 <strong>▼各言語へジャンプ</strong><br>
 """ + " | ".join(
-    f'<a href="#{lg}">{flag.split()[0]} {lang.split()[1]}</a>'
-    for lg, flag in LANGS for _, lang in [flag.split(" ",1)]
+    f'<a href="#{lg}">{flag}</a>'
+    for lg, flag in LANGS
 ) + "</nav><hr>"
 ]
 
