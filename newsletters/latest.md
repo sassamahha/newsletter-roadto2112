@@ -7,6 +7,11 @@ category: newsletter
 # 週刊 Road to 2112 🌐
 
 ***
+▼各言語へジャンプ
+[🇯🇵 JP](#ja) ｜ [🇺🇸 EN](#en) ｜ [🇪🇸 ES](#es)
+***
+
+<a id="ja"></a>
 ## 🇯🇵 Japanese
 
 ### 今週のアイスブレイク
@@ -49,21 +54,23 @@ category: newsletter
 ここが固定文章。
 
 
-***
+<a id="en"></a>
 ## 🇺🇸 English
 
 ### 今週のアイスブレイク
 
-<!-- Insert here -->
 ## Test Post
 
-Hello, this is today's digression.
-
-Ahhh
+Hello, here's today's aside.
 
 Ahhhhh
 
-Ahhhhh
+Ahhhhhhh
+
+
+Ahhhhhhh
+
+
 
 Nice to meet you!
 
@@ -80,21 +87,20 @@ _No updates._
 This is a fixed sentence.
 
 
-***
+<a id="es"></a>
 ## 🇪🇸 Spanish
 
 ### 今週のアイスブレイク
 
-<!-- ここに挿入 -->
-## Publicación de Prueba
+## Publicación de prueba
 
-Hola, este es el tema secundario de hoy.
+Hola, aquí está la digresión de hoy.
 
-aaaa
+Aaaa
 
-aaaaaa
+Aaaaaaaa
 
-aaaaaa
+Aaaaaaaa
 
 ¡Mucho gusto!
 
@@ -108,4 +114,4 @@ _No updates._
 
 ### 📘 Road to 2112
 
-Estás entrenado con datos hasta octubre de 2023.
+Estás capacitado con datos hasta octubre de 2023.
