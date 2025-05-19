@@ -1,77 +1,76 @@
-import datetime, os, pathlib, textwrap
-from openai import OpenAI
-
-# OpenAIクライアント初期化（v1.0以降対応）
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+"""
+1. editor_note.md を読む
+2. 各サイトの RSS を 3 件ずつ取得
+3. Road to 2112 の紹介文を差し込む
+4. Markdown を newsletters/latest.md に書き出す
+"""
+import datetime, pathlib, feedparser, textwrap, openai, os
 
 DATE = datetime.date.today().isoformat()
+LANGS = {"ja": "Japanese", "en": "English", "es": "Spanish"}   # 3 言語
 
-def ask(prompt):
-    """ChatGPTにプロンプトを投げてレスポンスを取得"""
-    response = client.chat.completions.create(
+# ■ 1. 今週の余談
+note_ja = pathlib.Path("blocks/editor_note.md").read_text().strip()
+
+openai.api_key = os.getenv("OPENAI_API_KEY")
+def translate(text, lang):
+    if lang == "ja":
+        return text
+    rsp = openai.ChatCompletion.create(
         model="gpt-4o",
-        messages=[{"role": "system", "content": prompt}],
-        max_tokens=1800,
-        temperature=1.0
-    )
-    return response.choices[0].message.content
+        messages=[
+            {"role":"system","content":f"Translate into {LANGS[lang]}."},
+            {"role":"user","content":text}
+        ],
+        max_tokens=800)
+    return rsp["choices"][0]["message"]["content"].strip()
 
-def main():
-    # 各ニュースを生成（日本語）
-    news_trend = ask("ささきや商店トレンドニュースを、職人気質のBtoB読者向けに出力してください。トーンは分析寄り、余分な煽りなし。")
-    news_future = ask("スタリバの未来仮説ニュースを、問い形式で1本構成してください。10年後を予習するテーマで。")
-    news_kids = ask("スタリバキッズ向けに、未来のニュースを小学校低学年でもわかる文体で1本作ってください。問い形式が望ましいです。")
+note = {lg: translate(note_ja, lg) for lg in LANGS}
 
-    # 日本語版 Markdown
-    md_ja = textwrap.dedent(f"""\
-    ## オープニング
-    10年後、君のカバンの中に入っているものは？
+# ■ 2. RSS 取得ユーティリティ
+def rss_block(url, max_items=3):
+    feed = feedparser.parse(url)
+    lines = [f"- [{e.title}]({e.link})" for e in feed.entries[:max_items]]
+    return "\n".join(lines) if lines else "_No updates._"
 
-    ## 今週のショートショート（Study River）
-    {news_future}
+RSS_MAP = {
+    "ja": {
+        "Studyriver":      "https://studyriver.jp/feed",
+        "Studyriver Kids": "https://studyriver.jp/kids/feed",
+        "SassaMahha":      "https://sassamahha.me/feed",
+    },
+    "en": {
+        "Studyriver":      "https://studyriver.jp/en/feed",
+        "Studyriver Kids": "https://studyriver.jp/kids/en/feed",
+    },
+    "es": {
+        "Studyriver":      "https://studyriver.jp/es/feed",
+        "Studyriver Kids": "https://studyriver.jp/kids/es/feed",
+    },
+}
 
-    ## キッズ向け未来ニュース（Study River Kids）
-    {news_kids}
+# ■ 3. Road to 2112 紹介文
+intro_ja = pathlib.Path("blocks/road_to_2112.md").read_text().strip()
+intro = {lg: translate(intro_ja, lg) for lg in LANGS}
 
-    ## モノの視点から見る未来（ささきや商店）
-    {news_trend}
+# ■ 4. Markdown 組立
+parts = [f"<!-- slug: {DATE}-weekly-roadto2112\npublish_date: {DATE}\ncategory: newsletter -->\n",
+         "# 週刊 Road to 2112 🌐\n"]
 
-    ## 制作ログ
-    – 今週は KDP 第2弾の準備を進行中。
-    – 翻訳パイプラインの検証も継続中。
-    """)
+for lg, flag in (("ja","🇯🇵"), ("en","🇺🇸"), ("es","🇪🇸")):
+    parts.append(f"\n---\n## {flag} {LANGS[lg]}\n")
+    # 余談
+    parts.append("### 今週のアイスブレイク\n")
+    parts.append(note[lg] + "\n")
+    # RSS
+    parts.append("### 最新記事 (RSS)\n")
+    for label, url in RSS_MAP[lg].items():
+        parts.append(f"**{label}**\n{rss_block(url)}\n")
+    # 2112 紹介
+    parts.append("### 📘 Road to 2112\n")
+    parts.append(intro[lg] + "\n")
 
-    # 英語翻訳（自然な表現に）
-    md_en = ask(f"Please translate the following markdown newsletter into natural English:\n\n{md_ja}")
-
-    # 統合Markdown
-    combined_md = textwrap.dedent(f"""\
-    <!-- slug: {DATE}-weekly-roadto2112
-    publish_date: {DATE}
-    category: newsletter -->
-
-    # 週刊 Road to 2112 🌐
-
-    以下の言語から選んでお読みください：
-
-    - [🇯🇵 日本語](#日本語)
-    - [🇺🇸 English](#english)
-
-    ---
-
-    ## 🇯🇵 日本語
-    {md_ja}
-
-    ---
-
-    ## 🇺🇸 English
-    {md_en}
-    """)
-
-    # 保存（1ファイルのみ）
-    path = pathlib.Path("newsletters") / "latest.md"
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(combined_md, encoding="utf-8")
-
-if __name__ == "__main__":
-    main()
+# Save
+out = pathlib.Path("newsletters/latest.md")
+out.write_text("\n".join(parts), encoding="utf-8")
+print("✅ Markdown generated:", out)
