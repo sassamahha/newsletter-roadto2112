@@ -73,14 +73,15 @@ parts = [f"""<!DOCTYPE html>
 
 for lg, name, flag in LANGS:
     parts.append(f"<h2>{flag} {name}</h2>")
-    parts.append("<h3 style="font-size: 20px; font-weight: bold; color: #444; border-bottom: 4px solid #bcd; padding-bottom: 6px;">今週のアイスブレイク</h3>")
+    parts.append("<h3 style='font-size: 20px; font-weight: bold; color: #444; border-bottom: 4px solid #bcd; padding-bottom: 6px;'>今週のアイスブレイク</h3>")
     parts.append("<p>" + notes[lg].replace("\n", "<br>") + "</p>")
-    parts.append("<h3 style="font-size: 20px; font-weight: bold; color: #444; border-bottom: 4px solid #bcd; padding-bottom: 6px;">最新記事 (RSS)</h3>")
+    parts.append("<h3 style='font-size: 20px; font-weight: bold; color: #444; border-bottom: 4px solid #bcd; padding-bottom: 6px;'>最新記事 (RSS)</h3>")
     for site, url in RSS[lg].items():
-        parts.append(f"<h4 style="background:#f9f9f9; border-left:4px solid #bcd; padding:12px; margin-top:16px; border-radius:4px; font-size:18px; font-weight:bold; color:#333;">{site}</h4><ul style="padding-left: 0; list-style-type: none;">{rss_html(url)}</ul>")
-    parts.append("<h3 style="font-size: 20px; font-weight: bold; color: #444; border-bottom: 4px solid #bcd; padding-bottom: 6px;">Road to 2112</h3>")
+        parts.append(f"<h4 style='background:#f9f9f9; border-left:4px solid #bcd; padding:12px; margin-top:16px; border-radius:4px; font-size:18px; font-weight:bold; color:#333;'>{site}</h4><ul style='padding-left: 0; list-style-type: none;'>{rss_html(url)}</ul>")
+    parts.append("<h3 style='font-size: 20px; font-weight: bold; color: #444; border-bottom: 4px solid #bcd; padding-bottom: 6px;'>Road to 2112</h3>")
     parts.append(road_html[lg])
     parts.append("<hr>")
+
 
 parts.append("</div></body></html>")
 
