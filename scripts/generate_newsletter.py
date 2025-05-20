@@ -15,9 +15,9 @@ LANGS = [
 
 RSS = {
     "ja": {
-        "Studyriver": "https://studyriver.jp/feed",
-        "Studyriver Kids": "https://studyriver.jp/kids/feed",
-        "SassaMahha": "https://sassamahha.me/feed",
+        "StudyRiver": "https://studyriver.jp/feed",
+        "StudyRiver Kids": "https://studyriver.jp/kids/feed",
+        "ささきや商店": "https://sassamahha.me/feed",
     },
     "en": {
         "Studyriver": "https://studyriver.jp/en/feed",
