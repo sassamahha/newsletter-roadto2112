@@ -43,11 +43,11 @@ def rss_html(url, limit=3):
     f = feedparser.parse(url)
     items = f.entries[:limit]
     return "\n".join(
-        f"""<li style="background:#fff; border:1px solid #B6B09F; border-radius:6px; padding:12px; margin-bottom:10px;">
-  <a href="{html.escape(e.link)}" style="text-decoration:none; color:#333;">
-    {html.escape(e.title)}
-  </a>
-</li>"""
+        f'<li style="background:#fff; border:1px solid #bcd; padding:12px; margin-bottom:12px; '
+        f'box-shadow: 0 2px 5px rgba(0,0,0,0.08); transition: 0.2s ease-in-out;">'
+        f'<a href="{html.escape(e.link)}" style="text-decoration:none; color:#333; display:block;">'
+        f'{html.escape(e.title)}'
+        f'</a></li>'
         for e in items
     ) or "<li><em>No updates.</em></li>"
 
@@ -65,14 +65,13 @@ parts = [f"""<!DOCTYPE html>
 <html lang="ja"><meta charset="utf-8">
 <title>週刊 Road to 2112</title>
 <body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;line-height:1.6;background-color:#B6B09F;max-width:680px;margin:auto">
-<div style="background:#F2F2F2; margin:13px 8px; padding:30px 13px; border-radius:12px;">
+<div style="color: #444;background:#FFF; margin:13px 8px; padding:30px 13px;">
 <h1>週刊 Road to 2112 🌐</h1>
-<p><small>{DATE}</small></p>
-<p><small>日本語>英語の順番です</small></p>
+<p><small>{DATE}｜日本語>英語の順番です</small></p>
 <hr>"""]
 
 for lg, name, flag in LANGS:
-    parts.append(f"<h2>{flag} {name}</h2>")
+    parts.append(f"<h2 style='font-size: 24px;'>{flag} {name}</h2>")
     parts.append("<h3 style='font-size: 20px; font-weight: bold; color: #444; border-bottom: 4px solid #bcd; padding-bottom: 6px;'>今週のアイスブレイク</h3>")
     parts.append("<p>" + notes[lg].replace("\n", "<br>") + "</p>")
     parts.append("<h3 style='font-size: 20px; font-weight: bold; color: #444; border-bottom: 4px solid #bcd; padding-bottom: 6px;'>最新記事 (RSS)</h3>")
