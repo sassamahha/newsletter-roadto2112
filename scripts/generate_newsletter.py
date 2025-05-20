@@ -43,13 +43,14 @@ def rss_html(url, limit=3):
     f = feedparser.parse(url)
     items = f.entries[:limit]
     return "\n".join(
-        f'<li style="background:#fff; border:1px solid #B6B09F; border-radius:6px; padding:12px; margin-bottom:10px;">
-            <a href="{html.escape(e.link)}">
-                {html.escape(e.title)}
-            </a>
-        </li>'
+        f"""<li style="background:#fff; border:1px solid #B6B09F; border-radius:6px; padding:12px; margin-bottom:10px;">
+  <a href="{html.escape(e.link)}" style="text-decoration:none; color:#333;">
+    {html.escape(e.title)}
+  </a>
+</li>"""
         for e in items
     ) or "<li><em>No updates.</em></li>"
+
 
 note_ja = pathlib.Path("blocks/editor_note.txt").read_text().strip()
 notes = {lg: t(note_ja, lg) for lg, _, _ in LANGS}
