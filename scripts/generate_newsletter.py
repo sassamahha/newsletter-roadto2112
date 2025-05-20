@@ -72,7 +72,7 @@ for lg, name, flag in LANGS:
     parts.append("<h3>最新記事 (RSS)</h3>")
     for site, url in RSS[lg].items():
         parts.append(f"<h4>{site}</h4><ul>{rss_html(url)}</ul>")
-    parts.append("<h3>📘 Road to 2112</h3>")
+    parts.append("<h3>Road to 2112</h3>")
     parts.append(road_html[lg])
     parts.append("<hr>")
 
