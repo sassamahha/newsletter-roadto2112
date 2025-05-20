@@ -30,10 +30,13 @@ jobs:
       - name: Send with SendGrid
         run: |
           html=$(cat email.html)
-          jq -n --arg html "$html" '
+          list_id=${SG_LIST_ID}
+
+          jq -n --arg html "$html" --arg list_id "$list_id" '
           {
             personalizations: [{
-              to: [{email: "jun.sasaki.eidendo@gmail.com"}],
+              to: [],
+              list_ids: [$list_id],
               subject: "【2112】週刊 Road to 2112"
             }],
             from: {
@@ -53,3 +56,5 @@ jobs:
             --data @payload_ready.json
         env:
           SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
+          SG_LIST_ID: ${{ secrets.SG_LIST_ID }}
+
