@@ -9,8 +9,8 @@ from openai import OpenAI
 # ---- 設定 ----
 DATE = datetime.date.today().isoformat()
 LANGS = [
-    ("ja", "Japanese", "\ud83c\uddef\ud83c\uddf5"),
-    ("en", "English", "\ud83c\uddfa\ud83c\uddf8"),
+    ("ja", "Japanese", "🇯🇵"),
+    ("en", "English", "🇺🇸"),
 ]
 
 RSS = {
@@ -55,12 +55,13 @@ road_html = {
     for lg, _, _ in LANGS
 }
 
+# ---- HTML生成 ----
 parts = [f"""<!DOCTYPE html>
-<html lang=\"ja\"><meta charset=\"utf-8\">
+<html lang="ja"><meta charset="utf-8">
 <title>週刊 Road to 2112</title>
-<body style=\"font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;line-height:1.6;background-color:B6B09F;max-width:680px;margin:auto\">
+<body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;line-height:1.6;background-color:#B6B09F;max-width:680px;margin:auto">
 <div style="background:#F2F2F2; padding:30px; border-radius:8px;">
-<h1>週刊 Road to 2112 \ud83c\udf10</h1>
+<h1>週刊 Road to 2112 🌐</h1>
 <p><small>{DATE}</small></p>
 <hr>"""]
 
@@ -71,7 +72,7 @@ for lg, name, flag in LANGS:
     parts.append("<h3>最新記事 (RSS)</h3>")
     for site, url in RSS[lg].items():
         parts.append(f"<h4>{site}</h4><ul>{rss_html(url)}</ul>")
-    parts.append("<h3>\ud83d\udcd8 Road to 2112</h3>")
+    parts.append("<h3>📘 Road to 2112</h3>")
     parts.append(road_html[lg])
     parts.append("<hr>")
 
@@ -79,4 +80,4 @@ parts.append("</div></body></html>")
 
 out = pathlib.Path("email.html")
 out.write_text("\n".join(parts), encoding="utf-8")
-print("\u2705 wrote", out)
+print("✅ wrote", out)
