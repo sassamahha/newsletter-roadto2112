@@ -43,7 +43,11 @@ def rss_html(url, limit=3):
     f = feedparser.parse(url)
     items = f.entries[:limit]
     return "\n".join(
-        f'<li><a href="{html.escape(e.link)}">{html.escape(e.title)}</a></li>'
+        f'<li style="background:#fff; border:1px solid #B6B09F; border-radius:6px; padding:12px; margin-bottom:10px;">
+            <a href="{html.escape(e.link)}">
+                {html.escape(e.title)}
+            </a>
+        </li>'
         for e in items
     ) or "<li><em>No updates.</em></li>"
 
@@ -60,19 +64,20 @@ parts = [f"""<!DOCTYPE html>
 <html lang="ja"><meta charset="utf-8">
 <title>週刊 Road to 2112</title>
 <body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;line-height:1.6;background-color:#B6B09F;max-width:680px;margin:auto">
-<div style="background:#F2F2F2; padding:30px; border-radius:8px;">
+<div style="background:#F2F2F2; margin:13px 8px; padding:30px 13px; border-radius:12px;">
 <h1>週刊 Road to 2112 🌐</h1>
 <p><small>{DATE}</small></p>
+<p><small>日本語>英語の順番です</small></p>
 <hr>"""]
 
 for lg, name, flag in LANGS:
     parts.append(f"<h2>{flag} {name}</h2>")
-    parts.append("<h3>今週のアイスブレイク</h3>")
+    parts.append("<h3 style="font-size: 20px; font-weight: bold; color: #444; border-bottom: 4px solid #bcd; padding-bottom: 6px;">今週のアイスブレイク</h3>")
     parts.append("<p>" + notes[lg].replace("\n", "<br>") + "</p>")
-    parts.append("<h3>最新記事 (RSS)</h3>")
+    parts.append("<h3 style="font-size: 20px; font-weight: bold; color: #444; border-bottom: 4px solid #bcd; padding-bottom: 6px;">最新記事 (RSS)</h3>")
     for site, url in RSS[lg].items():
-        parts.append(f"<h4>{site}</h4><ul>{rss_html(url)}</ul>")
-    parts.append("<h3>Road to 2112</h3>")
+        parts.append(f"<h4 style="background:#f9f9f9; border-left:4px solid #bcd; padding:12px; margin-top:16px; border-radius:4px; font-size:18px; font-weight:bold; color:#333;">{site}</h4><ul style="padding-left: 0; list-style-type: none;">{rss_html(url)}</ul>")
+    parts.append("<h3 style="font-size: 20px; font-weight: bold; color: #444; border-bottom: 4px solid #bcd; padding-bottom: 6px;">Road to 2112</h3>")
     parts.append(road_html[lg])
     parts.append("<hr>")
 
