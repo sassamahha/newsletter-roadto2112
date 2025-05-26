@@ -1,89 +1,157 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
-日本語の editor_note.txt を元に英語と日本語のメール HTML を生成する。
-出力ファイルは email.html。
+Weekly multilingual newsletter generator
+----------------------------------------
+* RSS をクロールして <ul> リスト化
+* blocks/editor_note.md をターゲット言語へ翻訳（GPT）
+* blocks/kdp_intro_<lang>.md があれば差し込む
+* SendGrid (Marketing List) へ送信
+* 送信した HTML を newsletters/YYYY-MM-DD_<lang>.html として保存
 """
-import datetime, feedparser, pathlib, html, os
-from openai import OpenAI
 
-# ---- 設定 ----
-DATE = datetime.date.today().isoformat()
-LANGS = [
-    ("ja", "Japanese", "🇯🇵"),
-    ("en", "English", "🇺🇸"),
-]
+import os, sys, argparse, datetime, pathlib, textwrap, json, time
+import feedparser, markdown
+import openai                         # pip install openai>=1,<2
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail, From, To, Personalization, Content
 
-RSS = {
-    "ja": {
-        "StudyRiver": "https://studyriver.jp/feed",
-        "StudyRiver Kids": "https://studyriver.jp/kids/feed",
-        "ささきや商店": "https://sassamahha.me/feed",
-    },
-    "en": {
-        "Studyriver": "https://studyriver.jp/en/feed",
-        "Studyriver Kids": "https://studyriver.jp/kids/en/feed",
-    },
+
+# ---------- 設定 ----------
+LANG_FULL = {                         # GPT への指示用
+    "ja": "Japanese",
+    "en": "English",
+    "es": "Spanish",
+    "pt": "Portuguese",
+    "zh": "Chinese (Simplified)",
+    "zh-hant": "Chinese (Traditional)",
+    "id": "Indonesian",
+    "de": "German",
+    "it": "Italian",
+    "fr": "French",
 }
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+MODEL = "gpt-4o-mini"                # お好みで
+OPENAI_RETRY = 3                     # 軽いリトライ
 
-def t(text_ja, lang):
-    if lang == "ja":
-        return text_ja
-    rsp = client.chat.completions.create(
-        model="gpt-4o",
-        messages=[
-            {"role": "system", "content": f"Translate into {lang} preserving line breaks."},
-            {"role": "user", "content": text_ja}
-        ]
+
+
+# ---------- util ----------
+def read_file(path: pathlib.Path) -> str:
+    return path.read_text(encoding="utf-8") if path.exists() else ""
+
+def md2html(md_text: str) -> str:
+    return markdown.markdown(md_text) if md_text else ""
+
+def translate(md_text: str, target_lang: str) -> str:
+    """GPT でマークダウン翻訳。ja→ja など同一言語なら素通し。"""
+    if target_lang == "ja":
+        return md_text
+
+    client = openai.OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+    prompt = textwrap.dedent(f"""\
+        You are a professional translator.
+        Translate the following Markdown text into **{LANG_FULL[target_lang]}**.
+        Keep all Markdown structure and inline code unchanged.
+
+        ---
+        {md_text}
+        ---
+        Return only the translated Markdown.
+    """)
+
+    for attempt in range(1, OPENAI_RETRY + 1):
+        try:
+            rsp = client.chat.completions.create(
+                model=MODEL,
+                messages=[{"role": "user", "content": prompt}],
+            )
+            return rsp.choices[0].message.content.strip()
+        except Exception as e:
+            if attempt == OPENAI_RETRY:
+                print(f"[!] GPT translate failed ({target_lang}): {e}", file=sys.stderr)
+                return md_text
+            time.sleep(2 * attempt)
+
+
+def build_articles(feeds: list[str], limit: int = 10) -> str:
+    items = []
+    for url in feeds:
+        d = feedparser.parse(url)
+        items.extend(d.entries)
+    items.sort(key=lambda e: e.get("published_parsed") or 0, reverse=True)
+    html = ["<ul>"]
+    for e in items[:limit]:
+        html.append(f'<li><a href="{e.link}">{e.title}</a></li>')
+    html.append("</ul>")
+    return "\n".join(html)
+
+
+# ---------- main generator ----------
+def generate_html(lang: str, feeds: list[str]) -> str:
+    today = datetime.date.today()
+
+    # 1. editor note (翻訳込み)
+    src_note_md = read_file(pathlib.Path("blocks/editor_note.md"))
+    note_md_translated = translate(src_note_md, lang)
+    note_html = md2html(note_md_translated) or "<p>(No editor note)</p>"
+
+    # 2. KDP intro (言語別固定、なければ空)
+    kdp_md = read_file(pathlib.Path("blocks") / f"kdp_intro_{lang}.md")
+    kdp_html = md2html(kdp_md)
+
+    # 3. Articles
+    articles_html = build_articles(feeds)
+
+    return f"""\
+<!doctype html><html><body>
+{note_html}
+<hr/><h2>Latest Articles</h2>
+{articles_html}
+{('<hr/>'+kdp_html) if kdp_html else ''}
+<hr/><p style="font-size:12px;color:#888;">Sent {today} • StudyRiver</p>
+</body></html>
+"""
+
+
+def send_via_sendgrid(html: str, lang: str, list_id: str, api_key: str):
+    sg = SendGridAPIClient(api_key)
+    mail = Mail(
+        from_email=From("info@studyriver.jp", "StudyRiver"),
+        subject=f"StudyRiver Weekly ({lang}) – {datetime.date.today()}",
+        html_content=Content("text/html", html),
     )
-    return rsp.choices[0].message.content.strip()
+    p = Personalization()
+    p.add_to(To(email=f"{list_id}@contact.list"))
+    mail.add_personalization(p)
 
-def rss_html(url, limit=3):
-    f = feedparser.parse(url)
-    items = f.entries[:limit]
-    return "\n".join(
-        f'<li style="background:#fff; border:1px solid #bcd; padding:12px; margin-bottom:12px; '
-        f'box-shadow: 0 2px 5px rgba(0,0,0,0.08); transition: 0.2s ease-in-out;">'
-        f'<a href="{html.escape(e.link)}" style="text-decoration:none; color:#333; display:block;">'
-        f'{html.escape(e.title)}'
-        f'</a></li>'
-        for e in items
-    ) or "<li><em>No updates.</em></li>"
+    rsp = sg.client.mail.send.post(request_body=mail.get())
+    if rsp.status_code >= 300:
+        raise RuntimeError(f"SendGrid error {rsp.status_code}: {rsp.body}")
 
 
-note_ja = pathlib.Path("blocks/editor_note.txt").read_text().strip()
-notes = {lg: t(note_ja, lg) for lg, _, _ in LANGS}
+# ---------- CLI ----------
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--lang", required=True, help="ja / en / es …")
+    ap.add_argument("--list-id", required=True, help="SendGrid Marketing List ID (digits)")
+    ap.add_argument("--feeds", required=True, help="newline-separated RSS URLs")
 
-road_html = {
-    lg: pathlib.Path(f"blocks/road_to_2112_{lg}.html").read_text()
-    for lg, _, _ in LANGS
-}
+    args = ap.parse_args()
+    feeds = [f.strip() for f in args.feeds.splitlines() if f.strip()]
 
-# ---- HTML生成 ----
-parts = [f"""<!DOCTYPE html>
-<html lang="ja"><meta charset="utf-8">
-<title>週刊 Road to 2112</title>
-<body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;line-height:1.6;background-color:#B6B09F;max-width:680px;margin:auto">
-<div style="color: #444;background:#FFF; margin:13px 8px; padding:30px 13px;">
-<h1>週刊 Road to 2112 🌐</h1>
-<p><small>{DATE}｜日本語>英語の順番です</small></p>
-<hr>"""]
+    # HTML build
+    html = generate_html(args.lang, feeds)
 
-for lg, name, flag in LANGS:
-    parts.append(f"<h2 style='font-size: 24px;'>{flag} {name}</h2>")
-    parts.append("<h3 style='font-size: 20px; font-weight: bold; color: #444; border-bottom: 4px solid #bcd; padding-bottom: 6px;'>今週のアイスブレイク</h3>")
-    parts.append("<p>" + notes[lg].replace("\n", "<br>") + "</p>")
-    parts.append("<h3 style='font-size: 20px; font-weight: bold; color: #444; border-bottom: 4px solid #bcd; padding-bottom: 6px;'>最新記事 (RSS)</h3>")
-    for site, url in RSS[lg].items():
-        parts.append(f"<h4 style='background:#f9f9f9; border-left:4px solid #bcd; padding:12px; margin-top:16px; border-radius:4px; font-size:18px; font-weight:bold; color:#333;'>{site}</h4><ul style='padding-left: 0; list-style-type: none;'>{rss_html(url)}</ul>")
-    parts.append("<h3 style='font-size: 20px; font-weight: bold; color: #444; border-bottom: 4px solid #bcd; padding-bottom: 6px;'>Road to 2112</h3>")
-    parts.append(road_html[lg])
-    parts.append("<hr>")
+    # Archive locally
+    out_dir = pathlib.Path("newsletters"); out_dir.mkdir(exist_ok=True)
+    out_path = out_dir / f"{datetime.date.today()}_{args.lang}.html"
+    out_path.write_text(html, encoding="utf-8")
+    print(f"[+] saved {out_path}")
 
+    # Send
+    send_via_sendgrid(html, args.lang, args.list_id, os.environ["SENDGRID_API_KEY"])
+    print(f"[+] sent to list {args.list_id}")
 
-parts.append("</div></body></html>")
-
-out = pathlib.Path("email.html")
-out.write_text("\n".join(parts), encoding="utf-8")
-print("✅ wrote", out)
+if __name__ == "__main__":
+    main()
