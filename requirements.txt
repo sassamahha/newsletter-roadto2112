@@ -1,2 +1,4 @@
 openai>=1.0,<2.0
+sendgrid>=6.11
 feedparser>=6.0
+markdown>=3.5
