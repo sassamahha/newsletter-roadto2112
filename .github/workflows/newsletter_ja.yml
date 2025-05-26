@@ -1,0 +1,23 @@
+name: send-nl-ja
+on:
+  schedule: [ { cron: '30 23 * * 1' } ]   # 火 08:30 JST
+  workflow_dispatch:
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    env:
+      LANG: "ja"
+      LIST_ID: ${{ secrets.LIST_ID_JA }}
+      FEED_URLS: |
+        https://studyriver.jp/feed/
+        https://sassamahha.me/feed/
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+      - run: pip install -r requirements.txt
+      - run: python scripts/generate_newsletter.py \
+              --lang "$LANG" \
+              --list-id "$LIST_ID" \
+              --feeds "$FEED_URLS"
